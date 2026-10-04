@@ -190,8 +190,10 @@ export const MeasurementsBar: React.FC<MeasurementsBarProps> = ({ measurements, 
         {/* QTc Calculé Automatiquement */}
         <div className="input-group qtc-result-group">
           <div className="qtc-label-row">
-            <span className="input-label">QTc Framingham <span className="unit">(ms)</span></span>
-            <div className="sex-toggle">
+            <span className="input-label" title="QTc corrigé selon la formule de Framingham : QTc = QT + 0.154 * (1000 - RR)">
+              QTc <span className="unit">(ms)</span>
+            </span>
+            <div className="sex-toggle" title="Ajuster les seuils selon le sexe (H: 450 ms / F: 460 ms)">
               <button
                 type="button"
                 className={`btn-pill ${!isFemale ? 'active' : ''}`}
