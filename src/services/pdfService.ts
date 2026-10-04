@@ -265,7 +265,7 @@ export function generateECGReportPDF(options: PDFReportOptions): jsPDF {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text('ANNEXE : TRACÉ DE L\'ÉLECTROCARDIOGRAMME (12 DÉRIVATIONS)', margin + 6, margin + 9);
+    doc.text('ANNEXE : TRACÉ DE L\'ÉLECTROCARDIOGRAMME', margin + 6, margin + 9);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
