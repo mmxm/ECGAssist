@@ -8,6 +8,8 @@ export interface QuestionNode {
   description?: string; // Texte de l'info popover
   referenceUrl?: string; // Titre du cours ou de la fiche
   svgDiagram?: string; // Schéma vectoriel SVG intégré
+  imageUrl?: string; // Illustration didactique du référentiel (crop haute résolution)
+  imageCaption?: string; // Légende clinique de l'illustration
   children?: QuestionNode[];
   unit?: string;
   placeholder?: string;

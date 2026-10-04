@@ -29,8 +29,25 @@ export const HelpDrawer: React.FC<HelpDrawerProps> = ({ node, onClose }) => {
         </div>
 
         <div className="help-drawer-body">
-          {/* Schéma vectoriel SVG si présent */}
-          {node.svgDiagram && (
+          {/* Illustration didactique du référentiel */}
+          {node.imageUrl && (
+            <div className="help-clinical-image-wrapper">
+              <div className="help-clinical-image-container">
+                <img
+                  src={node.imageUrl}
+                  alt={node.imageCaption || node.label}
+                  className="help-clinical-image"
+                  loading="lazy"
+                />
+              </div>
+              {node.imageCaption && (
+                <span className="diagram-caption">{node.imageCaption}</span>
+              )}
+            </div>
+          )}
+
+          {/* Schéma vectoriel SVG si présent (fallback ou complément) */}
+          {!node.imageUrl && node.svgDiagram && (
             <div className="help-diagram-wrapper">
               <div
                 className="help-svg-container"
