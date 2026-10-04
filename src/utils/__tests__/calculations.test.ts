@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateHeartRate,
   calculateRRFromHeartRate,
-  calculateQTcBazett,
+  calculateQTcFramingham,
   calculateSokolow,
   calculateCornell,
   evaluateQTc,
@@ -35,28 +35,26 @@ describe('Calculs ECG Biomédicaux', () => {
     });
   });
 
-  describe('calculateQTcBazett', () => {
-    it('calcule le QTc identique au QT mesuré si FC = 60 bpm (RR = 1000 ms = 1 sec)', () => {
-      // QTc = 400 / sqrt(1.0) = 400
-      expect(calculateQTcBazett(400, 1000)).toBe(400);
+  describe('calculateQTcFramingham', () => {
+    it('calcule le QTc identique au QT mesuré si FC = 60 bpm (RR = 1000 ms)', () => {
+      // QTc = 400 + 0.154 * (1000 - 1000) = 400
+      expect(calculateQTcFramingham(400, 1000)).toBe(400);
     });
 
     it('calcule correctement le QTc en cas de tachycardie (ex: QT = 320 ms, RR = 500 ms / FC 120)', () => {
-      // RR en sec = 0.5 -> sqrt(0.5) ≈ 0.7071
-      // QTc = 320 / 0.7071 ≈ 452.55 -> 453 ms
-      expect(calculateQTcBazett(320, 500)).toBe(453);
+      // QTc = 320 + 0.154 * (1000 - 500) = 320 + 77 = 397 ms
+      expect(calculateQTcFramingham(320, 500)).toBe(397);
     });
 
     it('calcule correctement le QTc en cas de bradycardie (ex: QT = 440 ms, RR = 1500 ms / FC 40)', () => {
-      // RR en sec = 1.5 -> sqrt(1.5) ≈ 1.2247
-      // QTc = 440 / 1.2247 ≈ 359 ms
-      expect(calculateQTcBazett(440, 1500)).toBe(359);
+      // QTc = 440 + 0.154 * (1000 - 1500) = 440 - 77 = 363 ms
+      expect(calculateQTcFramingham(440, 1500)).toBe(363);
     });
 
     it('retourne undefined pour des entrées non physiologiques ou négatives', () => {
-      expect(calculateQTcBazett(0, 1000)).toBeUndefined();
-      expect(calculateQTcBazett(400, 0)).toBeUndefined();
-      expect(calculateQTcBazett(-400, 1000)).toBeUndefined();
+      expect(calculateQTcFramingham(0, 1000)).toBeUndefined();
+      expect(calculateQTcFramingham(400, 0)).toBeUndefined();
+      expect(calculateQTcFramingham(-400, 1000)).toBeUndefined();
     });
   });
 

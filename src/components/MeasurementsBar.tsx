@@ -3,7 +3,7 @@ import type { MeasurementsState } from '../types/ecg';
 import {
   calculateHeartRate,
   calculateRRFromHeartRate,
-  calculateQTcBazett,
+  calculateQTcFramingham,
   calculateSokolow,
   calculateCornell,
   evaluateQTc,
@@ -23,7 +23,7 @@ export const MeasurementsBar: React.FC<MeasurementsBarProps> = ({ measurements, 
   const handleRRChange = (valStr: string) => {
     const rr = valStr ? parseFloat(valStr) : undefined;
     const hr = rr ? calculateHeartRate(rr) : undefined;
-    const qtc = rr && measurements.qt ? calculateQTcBazett(measurements.qt, rr) : undefined;
+    const qtc = rr && measurements.qt ? calculateQTcFramingham(measurements.qt, rr) : undefined;
     onChange({ ...measurements, rr, hr: hr ?? measurements.hr, qtc });
   };
 
@@ -31,7 +31,7 @@ export const MeasurementsBar: React.FC<MeasurementsBarProps> = ({ measurements, 
   const handleHRChange = (valStr: string) => {
     const hr = valStr ? parseFloat(valStr) : undefined;
     const rr = hr ? calculateRRFromHeartRate(hr) : undefined;
-    const qtc = rr && measurements.qt ? calculateQTcBazett(measurements.qt, rr) : undefined;
+    const qtc = rr && measurements.qt ? calculateQTcFramingham(measurements.qt, rr) : undefined;
     onChange({ ...measurements, hr, rr: rr ?? measurements.rr, qtc });
   };
 
@@ -50,7 +50,7 @@ export const MeasurementsBar: React.FC<MeasurementsBarProps> = ({ measurements, 
   // Mise à jour QT -> calcul automatique de QTc
   const handleQTChange = (valStr: string) => {
     const qt = valStr ? parseFloat(valStr) : undefined;
-    const qtc = qt && measurements.rr ? calculateQTcBazett(qt, measurements.rr) : undefined;
+    const qtc = qt && measurements.rr ? calculateQTcFramingham(qt, measurements.rr) : undefined;
     onChange({ ...measurements, qt, qtc });
   };
 
@@ -190,7 +190,7 @@ export const MeasurementsBar: React.FC<MeasurementsBarProps> = ({ measurements, 
         {/* QTc Calculé Automatiquement */}
         <div className="input-group qtc-result-group">
           <div className="qtc-label-row">
-            <label className="input-label">QTc Bazett <span className="unit">(ms)</span></label>
+            <span className="input-label">QTc Framingham <span className="unit">(ms)</span></span>
             <div className="sex-toggle">
               <button
                 type="button"
@@ -215,7 +215,7 @@ export const MeasurementsBar: React.FC<MeasurementsBarProps> = ({ measurements, 
             <span className="qtc-value">{measurements.qtc ? `${measurements.qtc} ms` : '—'}</span>
             {qtcEvaluation && (
               <span className="qtc-status">
-                {qtcEvaluation.badgeType === 'danger' && <AlertTriangle size={14} className="inline mr-1" />}
+                {qtcEvaluation.badgeType === 'danger' && <AlertTriangle size={13} className="inline mr-1" />}
                 {qtcEvaluation.statusText}
               </span>
             )}

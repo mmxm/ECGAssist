@@ -21,17 +21,17 @@ export function calculateRRFromHeartRate(hrBpm: number): number | undefined {
 }
 
 /**
- * Calcule le QT corrigé (QTc) selon la formule de Bazett
- * Formule : QTc = QT / sqrt(RR_en_secondes) = QT / sqrt(RR_ms / 1000)
+ * Calcule le QT corrigé (QTc) selon la formule de Framingham (Sagie et al., 1992)
+ * Formule standard : QTc = QT + 0.154 * (1 - RR_secondes) = QT + 0.154 * (1000 - RR_ms)
+ * Avantage clinique : évite la sur-correction en tachycardie et la sous-correction en bradycardie de Bazett.
  * @param qtMs Durée QT en millisecondes
  * @param rrMs Durée RR en millisecondes
  */
-export function calculateQTcBazett(qtMs: number, rrMs: number): number | undefined {
+export function calculateQTcFramingham(qtMs: number, rrMs: number): number | undefined {
   if (!qtMs || !rrMs || qtMs <= 0 || rrMs <= 0 || isNaN(qtMs) || isNaN(rrMs)) {
     return undefined;
   }
-  const rrSec = rrMs / 1000;
-  const qtc = qtMs / Math.sqrt(rrSec);
+  const qtc = qtMs + 0.154 * (1000 - rrMs);
   return Math.round(qtc);
 }
 

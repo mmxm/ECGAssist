@@ -32,195 +32,215 @@ export function generateECGReportPDF(options: PDFReportOptions): jsPDF {
   // PAGE 1 : COMPTE-RENDU D'INTERPRÉTATION
   // -------------------------------------------------------------
 
-  // En-tête Médical avec bandeau élégant
+  // En-tête Médical
   doc.setFillColor(15, 23, 42); // Slate 900
-  doc.rect(margin, margin, contentWidth, 22, 'F');
+  doc.rect(margin, margin, contentWidth, 20, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('COMPTE-RENDU D\'INTERPRÉTATION ECG', margin + 6, margin + 9);
+  doc.setFontSize(13);
+  doc.text('COMPTE-RENDU D\'INTERPRÉTATION ECG', margin + 6, margin + 8.5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(203, 213, 225); // Slate 300
-  doc.text(`Examen réalisé le : ${examDate}`, margin + 6, margin + 16);
-  doc.text('ECGAssist • Référentiel Clinique', pageWidth - margin - 52, margin + 16);
+  doc.text(`Examen réalisé le : ${examDate}`, margin + 6, margin + 15);
 
-  let currentY = margin + 30;
+  let currentY = margin + 27;
 
-  // Bloc 1 : Mesures et Constantes biomédicales
-  doc.setFillColor(248, 250, 252); // Slate 50
-  doc.setDrawColor(226, 232, 240); // Slate 200
-  doc.roundedRect(margin, currentY, contentWidth, 34, 2, 2, 'FD');
+  // -------------------------------------------------------------
+  // Bloc 1 : Mesures et Constantes biomédicales (Si renseignées)
+  // -------------------------------------------------------------
+  const activeMeasurements: { label: string; value: string; isAlert?: boolean }[] = [];
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(30, 41, 59); // Slate 800
-  doc.text('1. MESURES SUR LE TRACÉ', margin + 6, currentY + 7);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(51, 65, 85);
-
-  const col1X = margin + 6;
-  const col2X = margin + 70;
-  const col3X = margin + 130;
-
-  const row1Y = currentY + 16;
-  const row2Y = currentY + 26;
-
-  // Ligne 1
-  const rrText = measurements.rr ? `${measurements.rr} ms` : 'Non mesuré';
-  const hrText = measurements.hr ? `${measurements.hr} bpm` : 'Non mesuré';
-  const prText = measurements.pr ? `${measurements.pr} ms` : 'Non mesuré';
-
-  doc.text(`• Intervalle RR : `, col1X, row1Y);
-  doc.setFont('helvetica', 'bold');
-  doc.text(rrText, col1X + 26, row1Y);
-  doc.setFont('helvetica', 'normal');
-
-  doc.text(`• Fréquence : `, col2X, row1Y);
-  doc.setFont('helvetica', 'bold');
-  doc.text(hrText, col2X + 22, row1Y);
-  doc.setFont('helvetica', 'normal');
-
-  doc.text(`• Durée PR : `, col3X, row1Y);
-  doc.setFont('helvetica', 'bold');
-  doc.text(prText, col3X + 22, row1Y);
-  doc.setFont('helvetica', 'normal');
-
-  // Ligne 2 : QRS, QT, QTc
-  const qrsText = measurements.qrs ? `${measurements.qrs} ms` : 'Non mesuré';
-  const qtText = measurements.qt ? `${measurements.qt} ms` : 'Non mesuré';
-
-  let qtcText = 'Non calculé';
+  if (measurements.rr) {
+    activeMeasurements.push({ label: 'Intervalle RR', value: `${measurements.rr} ms` });
+  }
+  if (measurements.hr) {
+    activeMeasurements.push({ label: 'Fréquence Cardiaque', value: `${measurements.hr} bpm` });
+  }
+  if (measurements.pr) {
+    activeMeasurements.push({
+      label: 'Durée PR',
+      value: `${measurements.pr} ms`,
+      isAlert: measurements.pr > 200,
+    });
+  }
+  if (measurements.qrs) {
+    activeMeasurements.push({
+      label: 'Durée QRS',
+      value: `${measurements.qrs} ms`,
+      isAlert: measurements.qrs >= 120,
+    });
+  }
+  if (measurements.qt) {
+    activeMeasurements.push({ label: 'Durée QT', value: `${measurements.qt} ms` });
+  }
   if (measurements.qtc) {
     const qtcEval = evaluateQTc(measurements.qtc);
-    qtcText = `${measurements.qtc} ms (${qtcEval.isLong ? 'Allongé' : 'Normal'})`;
+    activeMeasurements.push({
+      label: 'QTc (Framingham)',
+      value: `${measurements.qtc} ms (${qtcEval.isLong ? 'Allongé' : 'Normal'})`,
+      isAlert: qtcEval.isLong,
+    });
+  }
+  if (measurements.sokolow) {
+    activeMeasurements.push({
+      label: 'Indice de Sokolow',
+      value: `${measurements.sokolow} mm`,
+      isAlert: measurements.sokolow > 35,
+    });
+  }
+  if (measurements.cornell) {
+    activeMeasurements.push({
+      label: 'Indice de Cornell',
+      value: `${measurements.cornell} mm`,
+    });
   }
 
-  doc.text(`• Durée QRS : `, col1X, row2Y);
-  doc.setFont('helvetica', 'bold');
-  doc.text(qrsText, col1X + 24, row2Y);
-  doc.setFont('helvetica', 'normal');
+  let sectionCounter = 1;
 
-  doc.text(`• Durée QT : `, col2X, row2Y);
-  doc.setFont('helvetica', 'bold');
-  doc.text(qtText, col2X + 21, row2Y);
-  doc.setFont('helvetica', 'normal');
+  // Affichage du bloc des mesures UNIQUEMENT si au moins une mesure est renseignée
+  if (activeMeasurements.length > 0) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`${sectionCounter}. MESURES SUR LE TRACÉ`, margin, currentY);
+    currentY += 4.5;
 
-  doc.text(`• QTc (Bazett) : `, col3X, row2Y);
-  doc.setFont('helvetica', 'bold');
-  if (measurements.qtc && evaluateQTc(measurements.qtc).isLong) {
-    doc.setTextColor(220, 38, 38); // Rouge si allongé
+    // Calcul de la hauteur de la boîte selon le nombre d'éléments (disposition en 3 colonnes)
+    const itemsPerRow = 3;
+    const rowCount = Math.ceil(activeMeasurements.length / itemsPerRow);
+    const boxHeight = 8 + rowCount * 7.5;
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, currentY, contentWidth, boxHeight, 2, 2, 'FD');
+
+    doc.setFontSize(9);
+
+    const colWidth = contentWidth / itemsPerRow;
+
+    activeMeasurements.forEach((item, idx) => {
+      const col = idx % itemsPerRow;
+      const row = Math.floor(idx / itemsPerRow);
+      const itemX = margin + 5 + col * colWidth;
+      const itemY = currentY + 6.5 + row * 7.5;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      doc.text(`${item.label} : `, itemX, itemY);
+
+      const labelWidth = doc.getTextWidth(`${item.label} : `);
+      doc.setFont('helvetica', 'bold');
+      if (item.isAlert) {
+        doc.setTextColor(220, 38, 38);
+      } else {
+        doc.setTextColor(15, 23, 42);
+      }
+      doc.text(item.value, itemX + labelWidth, itemY);
+    });
+
+    currentY += boxHeight + 8;
+    sectionCounter++;
   }
-  doc.text(qtcText, col3X + 27, row2Y);
-  doc.setTextColor(51, 65, 85);
-  doc.setFont('helvetica', 'normal');
 
-  currentY += 42;
-
-  // Indices d'hypertrophie si présents
-  if (measurements.sokolow || measurements.cornell) {
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-    const sokolowStr = measurements.sokolow ? `Indice de Sokolow : ${measurements.sokolow} mm` : '';
-    const cornellStr = measurements.cornell ? `Indice de Cornell : ${measurements.cornell} mm` : '';
-    const indicesStr = [sokolowStr, cornellStr].filter(Boolean).join('  |  ');
-    doc.text(indicesStr, margin + 6, currentY);
-    currentY += 6;
-  }
-
-  // Bloc 2 : Constatations & Anomalies
+  // -------------------------------------------------------------
+  // Bloc 2 : Constatations & Anomalies Électrocardiographiques
+  // -------------------------------------------------------------
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.setTextColor(30, 41, 59);
-  doc.text('2. CONSTATATIONS & ANOMALIES ÉLECTROCARDIOGRAPHIQUES', margin, currentY);
-  currentY += 6;
+  doc.text(`${sectionCounter}. CONSTATATIONS & ANOMALIES ÉLECTROCARDIOGRAPHIQUES`, margin, currentY);
+  currentY += 5;
 
   const reportItems = getSelectedReportItems(tree, selectedIds, radioSelections);
   const isEcgNormal = !!selectedIds['14258'];
 
   if (isEcgNormal && reportItems.length === 0) {
-    doc.setFillColor(240, 253, 244); // Vert très clair
+    doc.setFillColor(240, 253, 244);
     doc.setDrawColor(187, 247, 208);
-    doc.roundedRect(margin, currentY, contentWidth, 18, 2, 2, 'FD');
+    doc.roundedRect(margin, currentY, contentWidth, 16, 2, 2, 'FD');
 
     doc.setTextColor(22, 101, 52);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.text('✓ TRACÉ ÉLECTROCARDIOGRAPHIQUE NORMAL', margin + 8, currentY + 8);
+    doc.setFontSize(10);
+    doc.text('✓ TRACÉ ÉLECTROCARDIOGRAPHIQUE NORMAL', margin + 6, currentY + 6.5);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Rythme sinusal régulier, absence d\'anomalie de conduction, d\'excitabilité ou de repolarisation.', margin + 8, currentY + 14);
-    currentY += 26;
+    doc.setFontSize(8.5);
+    doc.text('Rythme sinusal régulier, absence d\'anomalie de conduction, d\'excitabilité ou de repolarisation.', margin + 6, currentY + 11.5);
+    currentY += 22;
+    sectionCounter++;
   } else if (reportItems.length === 0) {
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setTextColor(100, 116, 139);
-    doc.text('Aucune anomalie cochée lors de l\'interprétation.', margin + 6, currentY + 6);
-    currentY += 14;
+    doc.text('Aucune anomalie cochée lors de l\'interprétation.', margin + 4, currentY + 5);
+    currentY += 12;
+    sectionCounter++;
   } else {
     for (const group of reportItems) {
-      if (currentY > pageHeight - 55) {
+      if (currentY > pageHeight - 45) {
         doc.addPage();
         currentY = margin + 10;
       }
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(9.5);
       doc.setTextColor(2, 132, 199); // Sky 600
       doc.text(group.sectionTitle.toUpperCase(), margin, currentY);
-      currentY += 5;
+      currentY += 4.5;
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(8.5);
       doc.setTextColor(30, 41, 59);
 
       for (const item of group.items) {
-        if (currentY > pageHeight - 50) {
+        if (currentY > pageHeight - 40) {
           doc.addPage();
           currentY = margin + 10;
         }
 
         const lines = doc.splitTextToSize(`• ${item}`, contentWidth - 8);
         doc.text(lines, margin + 4, currentY);
-        currentY += lines.length * 4.5;
+        currentY += lines.length * 4.2;
       }
-      currentY += 3;
+      currentY += 2.5;
     }
+    sectionCounter++;
   }
 
-  // Bloc 3 : Conclusion & Note clinique libre
-  if (currentY > pageHeight - 55) {
-    doc.addPage();
-    currentY = margin + 10;
+  // -------------------------------------------------------------
+  // Bloc 3 : Conclusion & Note clinique libre (UNIQUEMENT si renseignée)
+  // -------------------------------------------------------------
+  const trimmedNote = patientNote ? patientNote.trim() : '';
+
+  if (trimmedNote.length > 0) {
+    if (currentY > pageHeight - 50) {
+      doc.addPage();
+      currentY = margin + 10;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`${sectionCounter}. CONCLUSION & SYNTHÈSE MÉDICALE`, margin, currentY + 4);
+    currentY += 9;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+
+    const noteLines = doc.splitTextToSize(trimmedNote, contentWidth - 10);
+    const noteHeight = Math.max(20, 8 + noteLines.length * 4.5);
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(margin, currentY, contentWidth, noteHeight, 2, 2, 'FD');
+
+    doc.text(noteLines, margin + 5, currentY + 6.5);
+    currentY += noteHeight + 6;
   }
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(30, 41, 59);
-  doc.text('3. CONCLUSION & SYNTHÈSE MÉDICALE', margin, currentY + 4);
-  currentY += 10;
-
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(203, 213, 225);
-  const noteBoxHeight = 32;
-  doc.roundedRect(margin, currentY, contentWidth, noteBoxHeight, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
-  doc.setTextColor(51, 65, 85);
-
-  const noteContent = patientNote.trim()
-    ? patientNote
-    : isEcgNormal
-    ? 'ECG normal ne nécessitant pas de prise en charge rythmologique spécifique dans ce contexte.'
-    : 'Anomalie(s) électrocardiographique(s) identifiée(s) à confronter au contexte clinique et hémodynamique.';
-
-  const noteLines = doc.splitTextToSize(noteContent, contentWidth - 10);
-  doc.text(noteLines, margin + 5, currentY + 8);
 
   // Pied de page Page 1
   const totalPages = ecgImage ? 2 : 1;
@@ -270,7 +290,6 @@ export function generateECGReportPDF(options: PDFReportOptions): jsPDF {
         'FAST'
       );
     } catch {
-      // En cas d'erreur de format, cadre de secours
       doc.setDrawColor(203, 213, 225);
       doc.rect(imageAreaX, imageAreaY, imageAreaWidth, imageAreaHeight);
       doc.setTextColor(148, 163, 184);

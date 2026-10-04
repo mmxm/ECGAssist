@@ -65,19 +65,7 @@ export const App: React.FC = () => {
       />
 
       <main className="main-content-container">
-        {/* 1. Module Photo ECG */}
-        <ECGPhotoUploader
-          ecgImage={state.ecgImage}
-          onImageChange={updateECGImage}
-        />
-
-        {/* 2. Barre de mesures & calculateurs automatiques */}
-        <MeasurementsBar
-          measurements={state.measurements}
-          onChange={updateMeasurements}
-        />
-
-        {/* 3. Arbre sémiologique et conclusion */}
+        {/* 1. Arbre sémiologique et conclusion */}
         <QuestionTree
           tree={tree}
           selectedIds={state.selectedIds}
@@ -87,6 +75,18 @@ export const App: React.FC = () => {
           onSelectRadio={selectRadio}
           onOpenHelp={setActiveHelpNode}
           onPatientNoteChange={updatePatientNote}
+        />
+
+        {/* 2. Barre de mesures & calculateurs automatiques */}
+        <MeasurementsBar
+          measurements={state.measurements}
+          onChange={updateMeasurements}
+        />
+
+        {/* 3. Module Photo ECG */}
+        <ECGPhotoUploader
+          ecgImage={state.ecgImage}
+          onImageChange={updateECGImage}
         />
       </main>
 
